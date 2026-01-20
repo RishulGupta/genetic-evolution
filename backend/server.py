@@ -628,9 +628,12 @@ async def analyze_repository(request: RepositoryAnalysisRequest, background_task
                 {"_id": 0}
             )
             if cached:
-                last_analyzed = datetime.fromisoformat(cached['last_analyzed'])
-                if datetime.now(timezone.utc) - last_analyzed < timedelta(hours=1):
-                    return cached
+                # Check if last_analyzed exists and is recent
+                if 'last_analyzed' in cached:
+                    last_analyzed = datetime.fromisoformat(cached['last_analyzed'])
+                    if datetime.now(timezone.utc) - last_analyzed < timedelta(hours=1):
+                        return cached
+                # If no last_analyzed field, treat as old cache and refresh
         
         # Fetch data
         repo_data = await github_service.fetch_repository_info(owner, repo)
