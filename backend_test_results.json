@@ -1,40 +1,46 @@
 {
   "summary": {
-    "tests_run": 5,
-    "tests_passed": 4,
-    "success_rate": 80.0,
-    "timestamp": "2026-01-20T07:10:04.357639"
+    "tests_run": 6,
+    "tests_passed": 5,
+    "success_rate": 83.33333333333334,
+    "timestamp": "2026-01-20T07:10:53.136712"
   },
   "detailed_results": [
     {
       "test_name": "API Root Endpoint",
       "success": true,
       "details": "Message: Codebase Evolution Genome API, Version: 1.0.0",
-      "timestamp": "2026-01-20T07:10:04.098787"
+      "timestamp": "2026-01-20T07:10:46.269641"
     },
     {
       "test_name": "Rate Limit Endpoint",
       "success": true,
-      "details": "Limit: 60, Remaining: 55",
-      "timestamp": "2026-01-20T07:10:04.256113"
+      "details": "Limit: 60, Remaining: 40",
+      "timestamp": "2026-01-20T07:10:46.418282"
     },
     {
       "test_name": "Repository Analysis",
+      "success": true,
+      "details": "Health Score: 62.17, Risk: Medium, Commits: 3",
+      "timestamp": "2026-01-20T07:10:47.309183"
+    },
+    {
+      "test_name": "Repository Comparison",
       "success": false,
-      "details": "Status: 520, Error: Analysis failed: 'last_analyzed'",
-      "timestamp": "2026-01-20T07:10:04.290735"
+      "details": "Status: 520, Response: Internal Server Error",
+      "timestamp": "2026-01-20T07:10:53.048851"
     },
     {
       "test_name": "Bug Prediction",
       "success": true,
-      "details": "Bug Prone: False, Confidence: 1.00",
-      "timestamp": "2026-01-20T07:10:04.326440"
+      "details": "Bug Prone: False, Confidence: 0.00",
+      "timestamp": "2026-01-20T07:10:53.096808"
     },
     {
       "test_name": "Health Score Retrieval",
       "success": true,
       "details": "Cached Health Score: 62.17",
-      "timestamp": "2026-01-20T07:10:04.357006"
+      "timestamp": "2026-01-20T07:10:53.136029"
     }
   ]
 }
