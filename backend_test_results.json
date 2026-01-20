@@ -1,0 +1,40 @@
+{
+  "summary": {
+    "tests_run": 5,
+    "tests_passed": 4,
+    "success_rate": 80.0,
+    "timestamp": "2026-01-20T07:10:04.357639"
+  },
+  "detailed_results": [
+    {
+      "test_name": "API Root Endpoint",
+      "success": true,
+      "details": "Message: Codebase Evolution Genome API, Version: 1.0.0",
+      "timestamp": "2026-01-20T07:10:04.098787"
+    },
+    {
+      "test_name": "Rate Limit Endpoint",
+      "success": true,
+      "details": "Limit: 60, Remaining: 55",
+      "timestamp": "2026-01-20T07:10:04.256113"
+    },
+    {
+      "test_name": "Repository Analysis",
+      "success": false,
+      "details": "Status: 520, Error: Analysis failed: 'last_analyzed'",
+      "timestamp": "2026-01-20T07:10:04.290735"
+    },
+    {
+      "test_name": "Bug Prediction",
+      "success": true,
+      "details": "Bug Prone: False, Confidence: 1.00",
+      "timestamp": "2026-01-20T07:10:04.326440"
+    },
+    {
+      "test_name": "Health Score Retrieval",
+      "success": true,
+      "details": "Cached Health Score: 62.17",
+      "timestamp": "2026-01-20T07:10:04.357006"
+    }
+  ]
+}
