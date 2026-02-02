@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Github, Loader2, TrendingUp, GitBranch, Users, AlertTriangle, Activity } from 'lucide-react';
+import { Github, Loader2, TrendingUp, GitBranch, Users, AlertTriangle, Activity, Bug, Shield, Flame, Zap, Heart, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -53,6 +53,25 @@ function RepositoryAnalysis() {
     }
   };
 
+  const getContagionColor = (interpretation) => {
+    switch (interpretation) {
+      case 'Contained': return 'text-emerald-500';
+      case 'Moderate': return 'text-yellow-500';
+      case 'Highly Infectious': return 'text-red-500';
+      default: return 'text-slate-500';
+    }
+  };
+
+  const getResilienceColor = (resilience) => {
+    switch (resilience) {
+      case 'Antifragile': return 'text-emerald-500';
+      case 'Resilient': return 'text-blue-500';
+      case 'Moderate': return 'text-yellow-500';
+      case 'Fragile': return 'text-red-500';
+      default: return 'text-slate-500';
+    }
+  };
+
   // Prepare chart data
   const commitChartData = analysisData?.commits?.slice(0, 20).reverse().map((commit, idx) => ({
     name: `C${idx + 1}`,
@@ -63,10 +82,27 @@ function RepositoryAnalysis() {
   })) || [];
 
   const bugDistribution = analysisData ? [
-    { name: 'Features', value: analysisData.commits.filter(c => c.commit_type === 'feature').length },
-    { name: 'Bug Fixes', value: analysisData.commits.filter(c => c.commit_type === 'bug').length },
-    { name: 'Refactors', value: analysisData.commits.filter(c => c.commit_type === 'refactor').length }
+    { name: 'Features', value: analysisData.commits.filter(c => c.commit_type === 'feature').length, color: '#10b981' },
+    { name: 'Bug Fixes', value: analysisData.commits.filter(c => c.commit_type === 'bug').length, color: '#ef4444' },
+    { name: 'Refactors', value: analysisData.commits.filter(c => c.commit_type === 'refactor').length, color: '#3b82f6' },
+    { name: 'Chores', value: analysisData.commits.filter(c => c.commit_type === 'chore').length, color: '#8b5cf6' }
   ] : [];
+
+  // Bug evolution radar data
+  const bugEvolutionRadar = analysisData?.bug_evolution ? [
+    { metric: 'Contagion', value: (1 - analysisData.bug_evolution.contagion_score.score) * 100, fullMark: 100 },
+    { metric: 'Recovery', value: analysisData.bug_evolution.recovery_metrics.immunity_score, fullMark: 100 },
+    { metric: 'Stability', value: analysisData.health_score.commit_stability_score * 4, fullMark: 100 },
+    { metric: 'Diversity', value: analysisData.health_score.contributor_diversity_score * 4, fullMark: 100 },
+    { metric: 'Freshness', value: analysisData.health_score.change_volatility_score * 4, fullMark: 100 }
+  ] : [];
+
+  // Hotspot intensity data
+  const hotspotData = analysisData?.bug_evolution?.file_hotspots?.slice(0, 10).map(h => ({
+    name: h.filename.split('/').pop(),
+    intensity: h.hotspot_intensity * 100,
+    bugs: h.bug_count + h.bug_fix_count
+  })) || [];
 
   return (
     <div className="container mx-auto px-6 md:px-12 py-12">
@@ -166,6 +202,188 @@ function RepositoryAnalysis() {
               </div>
             </div>
 
+            {/* Bug Evolution Section */}
+            {analysisData.bug_evolution && (
+              <div className="bg-black/40 border border-slate-800 backdrop-blur-sm rounded-none p-8" data-testid="bug-evolution-section">
+                <div className="flex items-center gap-3 mb-6">
+                  <Bug className="w-8 h-8 text-red-500" strokeWidth={1.5} />
+                  <h3 className="text-2xl font-bold text-white">Bug Evolution Analysis</h3>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-6 mb-8">
+                  {/* Contagion Score */}
+                  <div className="bg-black/30 border border-slate-800 rounded-none p-6" data-testid="contagion-score">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Zap className="w-5 h-5 text-yellow-500" strokeWidth={1.5} />
+                      <span className="text-sm uppercase tracking-widest text-slate-500">Bug Contagion</span>
+                    </div>
+                    <div className="text-4xl font-bold text-white font-mono mb-2">
+                      {(analysisData.bug_evolution.contagion_score.score * 100).toFixed(0)}%
+                    </div>
+                    <div className={`text-lg font-medium ${getContagionColor(analysisData.bug_evolution.contagion_score.interpretation)}`}>
+                      {analysisData.bug_evolution.contagion_score.interpretation}
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm text-slate-400">
+                      <div className="flex justify-between">
+                        <span>Avg Lifespan</span>
+                        <span className="font-mono">{analysisData.bug_evolution.contagion_score.avg_lifespan_days.toFixed(1)} days</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Reinfection Rate</span>
+                        <span className="font-mono">{(analysisData.bug_evolution.contagion_score.reinfection_rate * 100).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recovery Metrics */}
+                  <div className="bg-black/30 border border-slate-800 rounded-none p-6" data-testid="recovery-metrics">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Heart className="w-5 h-5 text-pink-500" strokeWidth={1.5} />
+                      <span className="text-sm uppercase tracking-widest text-slate-500">Recovery & Immunity</span>
+                    </div>
+                    <div className="text-4xl font-bold text-white font-mono mb-2">
+                      {analysisData.bug_evolution.recovery_metrics.immunity_score.toFixed(0)}
+                    </div>
+                    <div className={`text-lg font-medium ${getResilienceColor(analysisData.bug_evolution.recovery_metrics.resilience_class)}`}>
+                      {analysisData.bug_evolution.recovery_metrics.resilience_class}
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm text-slate-400">
+                      <div className="flex justify-between">
+                        <span>Avg Fix Time</span>
+                        <span className="font-mono">{analysisData.bug_evolution.recovery_metrics.avg_time_to_fix_hours.toFixed(1)}h</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Clean Streak</span>
+                        <span className="font-mono">{analysisData.bug_evolution.recovery_metrics.clean_commit_streak} commits</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bug Summary */}
+                  <div className="bg-black/30 border border-slate-800 rounded-none p-6" data-testid="bug-summary">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Activity className="w-5 h-5 text-emerald-500" strokeWidth={1.5} />
+                      <span className="text-sm uppercase tracking-widest text-slate-500">Bug Status</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-3xl font-bold text-emerald-400 font-mono">{analysisData.bug_evolution.resolved_bugs}</div>
+                        <div className="text-sm text-slate-400">Resolved</div>
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-red-400 font-mono">{analysisData.bug_evolution.active_bugs}</div>
+                        <div className="text-sm text-slate-400">Active</div>
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-white font-mono">{analysisData.bug_evolution.total_bugs_detected}</div>
+                        <div className="text-sm text-slate-400">Total Detected</div>
+                      </div>
+                      <div>
+                        <div className="text-3xl font-bold text-yellow-400 font-mono">{analysisData.bug_evolution.file_hotspots?.length || 0}</div>
+                        <div className="text-sm text-slate-400">Hotspots</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bug Evolution Radar & Hotspots */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Radar Chart */}
+                  <div className="bg-black/30 border border-slate-800 rounded-none p-6">
+                    <h4 className="text-lg font-medium text-white mb-4">Health Radar</h4>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <RadarChart data={bugEvolutionRadar}>
+                        <PolarGrid stroke="#1e293b" />
+                        <PolarAngleAxis dataKey="metric" stroke="#94a3b8" />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} stroke="#1e293b" />
+                        <Radar name="Score" dataKey="value" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Hotspots Bar Chart */}
+                  <div className="bg-black/30 border border-slate-800 rounded-none p-6">
+                    <h4 className="text-lg font-medium text-white mb-4">File Hotspots</h4>
+                    {hotspotData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={hotspotData} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                          <XAxis type="number" stroke="#94a3b8" domain={[0, 100]} />
+                          <YAxis type="category" dataKey="name" stroke="#94a3b8" width={100} />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#020617', 
+                              border: '1px solid #1e293b',
+                              borderRadius: 0
+                            }}
+                          />
+                          <Bar dataKey="intensity" fill="#ef4444" name="Intensity %" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-[250px] text-slate-500">
+                        No hotspots detected - Great job!
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Developer Influence */}
+                {analysisData.bug_evolution.developer_influence?.length > 0 && (
+                  <div className="mt-6 bg-black/30 border border-slate-800 rounded-none p-6">
+                    <h4 className="text-lg font-medium text-white mb-4">Developer Impact Analysis</h4>
+                    <p className="text-sm text-slate-500 mb-4">Systemic analysis of contribution patterns (not personal blame)</p>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {analysisData.bug_evolution.developer_influence.slice(0, 6).map((dev, idx) => (
+                        <div key={idx} className="bg-black/20 border border-slate-800 rounded-none p-4">
+                          <div className="text-white font-medium mb-2">{dev.contributor}</div>
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <div className="text-slate-500">Commits</div>
+                              <div className="font-mono text-white">{dev.commits_total}</div>
+                            </div>
+                            <div>
+                              <div className="text-slate-500">Fixes</div>
+                              <div className="font-mono text-emerald-400">{dev.bug_fixes}</div>
+                            </div>
+                            <div>
+                              <div className="text-slate-500">Impact</div>
+                              <div className={`font-mono ${dev.net_impact_score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                {dev.net_impact_score >= 0 ? '+' : ''}{(dev.net_impact_score * 100).toFixed(0)}%
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Temporal Bug Waves */}
+                {analysisData.bug_evolution.temporal_waves?.length > 0 && (
+                  <div className="mt-6 bg-black/30 border border-slate-800 rounded-none p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Clock className="w-5 h-5 text-purple-500" strokeWidth={1.5} />
+                      <h4 className="text-lg font-medium text-white">Bug Waves Detected</h4>
+                    </div>
+                    <div className="space-y-3">
+                      {analysisData.bug_evolution.temporal_waves.map((wave, idx) => (
+                        <div key={idx} className="bg-black/20 border border-slate-800 rounded-none p-4 flex items-center justify-between">
+                          <div>
+                            <span className="text-purple-400 font-medium capitalize">{wave.trigger_event}</span>
+                            <span className="text-slate-500 ml-2">triggered {wave.bug_count} bugs</span>
+                          </div>
+                          <div className="text-sm text-slate-400">
+                            Recovery: <span className="font-mono text-white">{wave.recovery_duration_days.toFixed(1)} days</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid md:grid-cols-4 gap-6 grid-borders">
               <div className="bg-black/40 border border-slate-800 backdrop-blur-sm rounded-none p-6 h-full" data-testid="total-commits-stat">
@@ -214,10 +432,20 @@ function RepositoryAnalysis() {
               <div className="bg-black/40 border border-slate-800 backdrop-blur-sm rounded-none p-6">
                 <h3 className="text-xl font-medium text-white mb-4">Commit Type Distribution</h3>
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={bugDistribution}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="name" stroke="#94a3b8" />
-                    <YAxis stroke="#94a3b8" />
+                  <PieChart>
+                    <Pie
+                      data={bugDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {bugDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: '#020617', 
@@ -225,9 +453,16 @@ function RepositoryAnalysis() {
                         borderRadius: 0
                       }}
                     />
-                    <Bar dataKey="value" fill="#10b981" />
-                  </BarChart>
+                  </PieChart>
                 </ResponsiveContainer>
+                <div className="flex justify-center gap-4 mt-4">
+                  {bugDistribution.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-3 h-3" style={{ backgroundColor: item.color }} />
+                      <span className="text-sm text-slate-400">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -243,9 +478,22 @@ function RepositoryAnalysis() {
                   >
                     <div className="flex items-start justify-between mb-2">
                       <span className="text-sm font-mono text-slate-500">{commit.sha.substring(0, 7)}</span>
-                      {commit.is_bug_fix && (
-                        <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-none border border-red-500/30">BUG FIX</span>
-                      )}
+                      <div className="flex gap-2">
+                        {commit.is_bug_fix && (
+                          <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded-none border border-red-500/30">BUG FIX</span>
+                        )}
+                        {commit.is_bug_introducing && (
+                          <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-none border border-yellow-500/30">RISKY</span>
+                        )}
+                        <span className={`text-xs px-2 py-1 rounded-none border ${
+                          commit.commit_type === 'feature' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                          commit.commit_type === 'bug' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                          commit.commit_type === 'refactor' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' :
+                          'bg-slate-500/20 text-slate-400 border-slate-500/30'
+                        }`}>
+                          {commit.commit_type.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                     <p className="text-white mb-2">{commit.message.split('\n')[0]}</p>
                     <div className="flex items-center gap-4 text-sm text-slate-400">
@@ -255,6 +503,12 @@ function RepositoryAnalysis() {
                       <span>•</span>
                       <span className="text-emerald-400">+{commit.additions}</span>
                       <span className="text-red-400">-{commit.deletions}</span>
+                      {commit.files_changed > 0 && (
+                        <>
+                          <span>•</span>
+                          <span>{commit.files_changed} files</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
